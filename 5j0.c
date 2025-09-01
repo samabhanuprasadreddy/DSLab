@@ -1,104 +1,101 @@
-#include<stdio.h>
-#include<stdlib.h>
+#include <stdio.h>
+#include <ctype.h>
+#include <string.h>
 
-struct node
-{
-	int data;
-	struct node *next;
-};
+#define MAX 100
 
-struct queue
-{
-	struct node *front, *rear;
-};
+char stack[MAX];
+int top = -1;
 
-void create_queue(struct queue *q)
-{
-	q->front = q->rear = NULL;
+// Push function
+void push(char c) {
+    if (top < MAX - 1) {
+        stack[++top] = c;
+    }
 }
 
-void insert(struct queue *q, int val)
-{
-	struct node *ptr = (struct node *)malloc(sizeof(struct node));
-	ptr->data = val;
-	ptr->next = NULL;
-	
-	if (q->rear == NULL)
-	    q->front = q->rear = ptr;
-	else
-	    q->rear = q->rear->next = ptr;
-	    
+// Pop function
+char pop() {
+    if (top >= 0) {
+        return stack[top--];
+    }
+    return -1;
 }
 
-void delete_element(struct queue *q)
-{
-	if (q->front == NULL)
-	{
-		printf("\nUNDERFLOW");
-		return;
-	}
-	struct node *temp = q->front;
-	printf("\nDELETED: %d", temp->data);
-	q->front = q->front->next;
-	if (q->front == NULL)
-	    q->rear = NULL;
-	free(temp);
+// Peek function
+char peek() {
+    if (top >= 0) {
+        return stack[top];
+    }
+    return -1;
 }
 
-int peek(struct queue *q)
-{
-	return (q->front) ? q->front->data : -1;
+// Operator precedence
+int precedence(char op) {
+    switch (op) {
+        case '*':
+        case '/':
+        case '%': return 2;
+        case '+':
+        case '-': return 1;
+        default: return 0;
+    }
 }
 
-void display(struct queue *q)
-{
-	if (q->front == NULL)
-	{
-		printf("\nQUEUE IS EMPTY");
-		return;
-	}
-	struct node *temp = q->front;
-	printf("\nQueue: ");
-	while (temp)
-	{
-		printf("%d ", temp->data);
-		temp = temp->next;
-	}
+// Check if character is operator
+int isOperator(char c) {
+    return (c == '+' || c == '-' || c == '*' || c == '/' || c == '%');
 }
 
-int main()
-{
-	struct queue q;
-	int val, option;
-	
-	create_queue(&q);
-	
-	do
-	{
-		printf("\n\n1. INSERT\n2. DELETE\n3. PEEK\n4. DISPLAY\n");
-		scanf("%d", &option);
-		
-		switch (option)
-		{
-			case 1:
-			   printf("enter value: ");
-			   scanf("%d", &val);
-			   insert(&q, val);
-			   break;
-			case 2:
-			   delete_element(&q);
-			   break;
-			case 3:
-			   val = peek(&q);
-			   if (val != -1) printf("\nfront: %d", val);
-			   else printf("\nQUEUE IS EMPTY");
-			   break;
-			case 4:
-			   display(&q);
-			   break;
-			   
-		}
-	}while (option != 5);
-	
-	return 0;
+// Infix to Postfix conversion
+void infixToPostfix(char infix[], char postfix[]) {
+    int i, k = 0;
+    char symbol;
+
+    for (i = 0; i < strlen(infix); i++) {
+        symbol = infix[i];
+
+        // Operand ? add to postfix
+        if (isalnum(symbol)) {
+            postfix[k++] = symbol;
+        }
+        // Left parenthesis ? push
+        else if (symbol == '(') {
+            push(symbol);
+        }
+        // Right parenthesis ? pop until '('
+        else if (symbol == ')') {
+            while (top != -1 && peek() != '(') {
+                postfix[k++] = pop();
+            }
+            pop(); // Remove '('
+        }
+        // Operator
+        else if (isOperator(symbol)) {
+            while (top != -1 && precedence(peek()) >= precedence(symbol)) {
+                postfix[k++] = pop();
+            }
+            push(symbol);
+        }
+    }
+
+    // Pop remaining operators
+    while (top != -1) {
+        postfix[k++] = pop();
+    }
+    postfix[k] = '\0'; // Null terminate
 }
+
+int main() {
+    char infix[MAX], postfix[MAX];
+
+    printf("Enter an infix expression: ");
+    scanf("%s", infix);
+
+    infixToPostfix(infix, postfix);
+
+    printf("Postfix expression: %s\n", postfix);
+
+    return 0;
+}
+
